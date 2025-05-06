@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import subprocess
 import time
+import os
 
 url = input('Paste rawkuma link, e.g. https://rawkuma.net/manga/sousou-no-frieren/: ')
 headers = {
@@ -17,6 +18,12 @@ for chapter in soup.find_all('li', {'data-num': True}):
     chapter_number = chapter['data-num']
     manga_name = url.replace('https://rawkuma.net/manga/', '').strip('/')
     download_page = chapter.select_one('a.dload')['href']
+
+    filename = f"{manga_name}-ch{chapter_number}.zip"
+
+    if os.path.exists(filename):
+        print(f"Skipping chapter {chapter_number}, file already exists: {filename}")
+        continue
 
     print(f"Resolving download for chapter {chapter_number}...")
 
