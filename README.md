@@ -1,5 +1,5 @@
 # Rawkuma scraper 
-A simple Python script that downloads manga from Rawkuma by using wget via subprocess to fetch each chapter's zip archive from their Google Drive.
+A simple Python script that downloads manga from Rawkuma by using wget via subprocess to fetch each chapter's zip archive from Rawkuma's Google Drive.
 
 ## Requirements
 - Any Linux distro
