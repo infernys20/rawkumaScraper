@@ -32,6 +32,20 @@ for chapter in soup.find_all('li', {'data-num': True}):
 
     # Get redirected to Google Drive link
     dl_response = session.get(download_page, allow_redirects=False)
+
+    # Handle archive isn't ready yet
+    if dl_response.status_code == 200:
+
+        if 'continue=1' not in download_page:
+            print("Archive not ready, waiting...")
+            if '?' in download_page:
+                download_page += '&continue=1'
+            else:
+                download_page += '?continue=1'
+
+            dl_response = session.get(download_page, allow_redirects=False)
+
+    # Handle download nornally
     if dl_response.status_code in (302, 303):
         google_drive_url = dl_response.headers['Location']
     else:
