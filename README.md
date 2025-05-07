@@ -8,4 +8,5 @@ A simple Python script that downloads manga from Rawkuma by using wget via subpr
 - Requests
 
 ## TODO list
-- Implement a 'Google Drive can't scan this file for viruses' page bypass
+- ~~Implement a 'Google Drive can't scan this file for viruses' page bypass~~
+- Folder management
