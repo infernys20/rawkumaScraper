@@ -27,28 +27,42 @@ for chapter in soup.find_all('li', {'data-num': True}):
 
     print(f"Resolving download for chapter {chapter_number}...")
 
-    # Follow redirect from the rawkuma download page
     session = requests.Session()
-    dl_response = session.get(download_page, headers=headers, allow_redirects=False)
+    session.headers.update(headers)
 
-    if dl_response.status_code == 302 or dl_response.status_code == 303:
+    # Get redirected to Google Drive link
+    dl_response = session.get(download_page, allow_redirects=False)
+    if dl_response.status_code in (302, 303):
         google_drive_url = dl_response.headers['Location']
     else:
         print(f"Failed to get redirect from {download_page}")
         continue
 
-    # Follow redirect from Google Drive to final file
-    g_response = session.get(google_drive_url, headers=headers, allow_redirects=False)
-    if 'Location' in g_response.headers:
-        final_url = g_response.headers['Location']
+    # Check if it's a virus warning page
+    g_response = session.get(google_drive_url)
+
+    if 'Content-Disposition' in g_response.headers:
+        final_url = g_response.url
+
+    elif "Google Drive can't scan this file for viruses" in g_response.text:
+        soup = BeautifulSoup(g_response.text, 'html.parser')
+        form = soup.find('form', {'id': 'download-form'})
+
+        if form:
+            action_url = form['action']
+            params = {
+                inp['name']: inp['value']
+                for inp in form.find_all('input') if inp.has_attr('name')
+            }
+            final_url = requests.Request('GET', action_url, params=params).prepare().url
+        else:
+            print(f"Failed to extract confirmation form for chapter {chapter_number}")
+            continue
     else:
-        print(f"Failed to get final download URL from Google Drive for chapter {chapter_number}")
+        print(f"Unexpected response for chapter {chapter_number}")
         continue
 
-    filename = f"{manga_name}-ch{chapter_number}.zip"
-    print(f"Downloading {final_url} as {filename}...")
-
-    # Download the file via wget
+    print(f"Downloading {filename} from {final_url}...")
     subprocess.run(["wget", "--content-disposition", "-O", filename, final_url])
     time.sleep(5)
 
