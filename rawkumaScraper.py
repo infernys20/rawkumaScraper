@@ -13,6 +13,8 @@ headers = {
 r = requests.get(url=url, headers=headers)
 soup = BeautifulSoup(r.content, 'html.parser')
 
+failed_chapters = []
+
 # Iterate over each chapter element
 for chapter in soup.find_all('li', {'data-num': True}):
     chapter_number = chapter['data-num']
@@ -45,11 +47,12 @@ for chapter in soup.find_all('li', {'data-num': True}):
 
             dl_response = session.get(download_page, allow_redirects=False)
 
-    # Handle download nornally
+    # Handle download normally
     if dl_response.status_code in (302, 303):
         google_drive_url = dl_response.headers['Location']
     else:
         print(f"Failed to get redirect from {download_page}")
+        failed_chapters.append((chapter_number, "Failed redirect from Rawkuma."))
         continue
 
     # Check if it's a virus warning page
@@ -71,13 +74,20 @@ for chapter in soup.find_all('li', {'data-num': True}):
             final_url = requests.Request('GET', action_url, params=params).prepare().url
         else:
             print(f"Failed to extract confirmation form for chapter {chapter_number}")
+            failed_chapters.append((chapter_number, "Failed to bypass 'scan for viruses' google page."))
             continue
     else:
         print(f"Unexpected response for chapter {chapter_number}")
+        failed_chapters.append((chapter_number, "Unexpected Google Drive response"))
         continue
 
     print(f"Downloading {filename} from {final_url}...")
     subprocess.run(["wget", "--content-disposition", "-O", filename, final_url])
     time.sleep(5)
 
-print("All downloads completed.")
+if failed_chapters:
+    print("Failed to download the following chapters:")
+    for chap, reason in failed_chapters:
+        print(f" - Chapter {chap}: {reason}")
+else:
+    print("All chapters downloaded successfully.")
